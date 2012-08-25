@@ -31,8 +31,8 @@ bigFontObj = pygame.font.Font('freesansbold.ttf',24)
 
 # Load resources
 spriteSheetSurface=pygame.image.load(os.path.join(basedir,'spritesheet.png'))
-spriteSheetSurface.set_colorkey((255,255,255))  #white will be interpreted as transparent
-spriteSheetSurface=spriteSheetSurface.convert() #convert color format to that of the display
+#spriteSheetSurface.set_colorkey((255,255,255))  #white will be interpreted as transparent
+#spriteSheetSurface=spriteSheetSurface.convert() #convert color format to that of the display
 
 darwinSurface=[1,2,3,4]
 darwinSurface[0]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,0,16,16)),(48,48))
@@ -49,9 +49,33 @@ desertSurfaces[1]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Re
 
 cactusSurface=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,16,16,16)),(48,48))
 
-turtleSurfaces=[]
-turtleSurfaces.append(pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,32,32,17)),(96,17*3)))
-turtleSurfaces.append(pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(32,32,32,17)),(96,17*3)))
+# Build turtle icons
+turtleShellSurface = pygame.transform.scale(
+                     spriteSheetSurface.subsurface(
+                     pygame.Rect(pygame.Rect(64,32,32,17))),(96,17*3))
+turtleBodySurfaces = []
+turtleBodySurfaces.append(pygame.transform.scale(
+                         spriteSheetSurface.subsurface(
+                         pygame.Rect(pygame.Rect(96,32,32,17))),(96,17*3)))
+turtleBodySurfaces.append(pygame.transform.scale(
+                         spriteSheetSurface.subsurface(
+                         pygame.Rect(pygame.Rect(0,64,32,17))),(96,17*3)))
+
+Turtle.shellSurface = turtleShellSurface
+Turtle.bodySurfaces = turtleBodySurfaces
+
+
+#defaultLegColor = pygame.Color('#114400')
+#defaultShellColor = pygame.Color('#226600')
+
+# 114400 = 888888 x 228800
+# 226600 = CCCCCC x 228800
+
+#turtleSurfaces=blueLeg
+#turtleSurfaces.append(pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,32,32,17)),(96,17*3)))
+#turtleSurfaces.append(pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(32,32,32,17)),(96,17*3)))
+
+
 
 pygame.mixer.music.load("bu-the-bananas-elves.it")
 
@@ -150,7 +174,7 @@ def doSelect():
           
           # Draw turtles
           for t in turtleList:
-               windowSurface.blit(turtleSurfaces[t.frame],(t.xpos,t.ypos))
+               windowSurface.blit(t.surfaces[t.frame],(t.xpos,t.ypos))
           
           # Draw selection square
           sc=random.randint(150,250)
