@@ -15,14 +15,14 @@ else:
 # Initialize pygame and window
 pygame.init()
 fpsClock=pygame.time.Clock()
-pygame.display.set_caption("Darwin's Adventure")
+pygame.display.set_caption("Darwin's Turtle Race Challange")
 pygame.display.set_icon(pygame.image.load(os.path.join(basedir,'icon.png')))
 windowSurface=pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT)) #,FULLSCREEN | DOUBLEBUF | HWSURFACE)
 pygame.mouse.set_visible(False)
 
-statsFontObj = pygame.font.Font('freesansbold.ttf',9)
-titleFontObj = pygame.font.Font('freesansbold.ttf',16)
-bigFontObj = pygame.font.Font('freesansbold.ttf',24)
+#statsFontObj = pygame.font.Font(None,9*3) #'freesansbold.ttf'
+#titleFontObj = pygame.font.Font(None,16*3)
+#bigFontObj = pygame.font.Font(None,24*3)
 
 #scoreSurface = fontObj.render('155', False, (0,0,0))
 #w=scoreSurface.get_rect().width*3
@@ -30,15 +30,34 @@ bigFontObj = pygame.font.Font('freesansbold.ttf',24)
 #scoreSurface = pygame.transform.scale(scoreSurface,(w,h))
 
 # Load resources
+fontSurface=pygame.image.load(os.path.join(basedir,'font.png'))
+alphabet="0123456789!/:.'? ABCDEFGHIJKLMNOPQRSTUVWXYZ?????"
+
+FONT_WIDTH=15
+def renderMsg(msg, xpos, ypos, scaleFactor=3, color=TEXT_COLOR):
+     if xpos==-1:        #-1 as xpos means we want to center it
+          xpos = (SCREEN_WIDTH-len(msg)*FONT_WIDTH*scaleFactor)/2
+     for c in msg:
+          i=alphabet.index(c)
+          x=(i%16)*16
+          y=(i/16)*16
+          surf=scale(fontSurface.subsurface(pygame.Rect(x,y,16,16)),scaleFactor)
+          surf.fill(color,None,BLEND_MULT)
+          windowSurface.blit(surf,(xpos,ypos))
+          xpos+=FONT_WIDTH*scaleFactor
+     
+
 spriteSheetSurface=pygame.image.load(os.path.join(basedir,'spritesheet.png'))
 #spriteSheetSurface.set_colorkey((255,255,255))  #white will be interpreted as transparent
 #spriteSheetSurface=spriteSheetSurface.convert() #convert color format to that of the display
 
-# Scale 3x
-def scale3x(surf):
+# Scale
+def scale(surf,sf=3):
      r=surf.get_rect()
-     return pygame.transform.scale(surf,(r.w*3,r.h*3))
-
+     return pygame.transform.scale(surf,(r.w*sf,r.h*sf))
+def scale3x(surf):
+     return scale(surf)
+     
 darwinSurface=[1,2,3,4]
 darwinSurface[0]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,0,16,16)),(48,48))
 darwinSurface[1]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(16,0,16,16)),(48,48))
@@ -102,7 +121,7 @@ sandRandomizer=random.Random()    # used to randomize the sand/desert tiles
 
 # Reset the game
 def resetGame():
-     global gameOver, victory, raceNumber, turtleList, leafCounter, losses
+     global gameOver, victory, raceNumber, turtleList, leafCounter, losses, victories, selectedTurtle
      
      turtleList = []
 #     for i in range(10):
@@ -112,11 +131,14 @@ def resetGame():
      turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
      turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
      
+     selectedTurtle = 0
+     
      gameOver=False
      victory=False
      
      raceNumber=0
      losses=0
+     victories=0
      leafCounter=1  #start with one leaf
 
 def drawSand():
@@ -128,34 +150,51 @@ def drawSand():
 
 def doTitle():
      done=False
-     mainMenuCounter=18   #animate Darwin
+     mainMenuCounter=14   #animate Darwin
 
      # Play title music
      pygame.mixer.music.load("bu-the-bananas-elves.it")
      pygame.mixer.music.play(-1)
 
      # Prepare title text
-     titleSurface=range(3)
-     titleSurface[0]=bigFontObj.render("DARWIN'S",True,TEXT_COLOR)
-     titleSurface[1]=bigFontObj.render("TURTLE RACE",True,TEXT_COLOR)
-     titleSurface[2]=bigFontObj.render("CHALLANGE",True,TEXT_COLOR)
-
+     #titleSurface=range(3)
+     #titleSurface[0]=bigFontObj.render("DARWIN'S",True,TEXT_COLOR)
+     #titleSurface[1]=bigFontObj.render("TURTLE RACE",True,TEXT_COLOR)
+     #titleSurface[2]=bigFontObj.render("CHALLANGE",True,TEXT_COLOR)
+     
+     t=Turtle(random.randint(1,Turtle.MAX_STAT),random.randint(1,Turtle.MAX_STAT),random.randint(1,Turtle.MAX_STAT))
      while not done:
           mainMenuCounter = (mainMenuCounter-1)%24
           
           drawSand()
 
-          for i in range(3):
-               w=titleSurface[i].get_rect().width*3
-               h=titleSurface[i].get_rect().height*3
-               surf = pygame.transform.scale(titleSurface[i],(w,h))
-               windowSurface.blit(surf,((SCREEN_WIDTH-w)/2,32+i*24*3))
-
+          #for i in range(3):
+          #     surf=titleSurface[i]
+          #     w=surf.get_rect().width
+          #     h=surf.get_rect().height
+          #     windowSurface.blit(surf,((SCREEN_WIDTH-w)/2,32+i*24*3))
+          renderMsg("DARWIN'S",-1,32,scaleFactor=3)
+          renderMsg("TURTLE RACE",-1,32+24*3,scaleFactor=3)
+          renderMsg("CHALLANGE",-1,32+2*24*3,scaleFactor=3)
+          
           if mainMenuCounter>11:
-               windowSurface.blit(darwinSurface[0],(10,186))
+               windowSurface.blit(darwinSurface[0],(40,186))
           else:
-               windowSurface.blit(darwinSurface[1],(10,186))
+               windowSurface.blit(darwinSurface[1],(40,186))
+          
+          windowSurface.blit(pygame.transform.flip(t.surfaces[t.frame],True,False),(SCREEN_WIDTH-112,186))
+          
+          step=24
+          renderMsg("INSTRUCTIONS:", -1, 240, scaleFactor=1)
+          renderMsg("HELP DARWIN PROVE HIS THEORY", -1, 240+step, scaleFactor=1)
+          renderMsg("BY BREEDING THE PERFECT RACING TURTLE", -1, 240+step*2, scaleFactor=1)
+          renderMsg("ARROW KEYS AND RETURN TO SELECT", -1, 240+step*3, scaleFactor=1)
+          renderMsg("SPACE TO BOOST DURING RACE",-1, 240+step*4, scaleFactor=1)
+          renderMsg("ENTER TO BEGIN",-1, 240+step*5, scaleFactor=1)
+          
 
+          t.tick()
+          
           # RETURN to start, ESC to quit
           for event in pygame.event.get():
                if event.type==QUIT:
@@ -170,10 +209,11 @@ def doTitle():
           fpsClock.tick(FPS)
 
 
-def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
-     global gameOver   #need to modify these global variables
+def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[], discardCursor=False):
+     global gameOver,selectedTurtle   #need to modify these global variables
      # Initialize Turtle Selection Screen
-     selectedTurtle=0
+     if previouslySelectedTurtle==None:
+          selectedTurtle=0
      
      if listOfTurtles==[]:
           listOfTurtles=turtleList
@@ -185,13 +225,10 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
           r = a/5
           c = a%5
           listOfTurtles[5*r+c].xpos=(SCREEN_WIDTH-(rtotal*96+(rtotal-1)*16))/2+(96+16)*c
-          listOfTurtles[5*r+c].ypos=200+(17*3+16)*r
+          listOfTurtles[5*r+c].ypos=184+(17*3+16)*r
 
      # Prepare text to be displayed
-     selectTurtleSurface=titleFontObj.render(textMessage,True,TEXT_COLOR)
-     w=selectTurtleSurface.get_rect().width*3
-     h=selectTurtleSurface.get_rect().height*3
-     selectTurtleSurface=pygame.transform.scale(selectTurtleSurface,(w,h))
+     #selectTurtleSurface=titleFontObj.render(textMessage,True,TEXT_COLOR)
      
      selectCounter=0  #for flashing cursor
      done=False
@@ -201,16 +238,19 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
           windowSurface.fill((200,200,240)) #(130,130,230))
           
           # Display message
-          w=selectTurtleSurface.get_rect().width
-          windowSurface.blit(selectTurtleSurface, ((SCREEN_WIDTH-w)/2,32))
-          pygame.draw.line(windowSurface,(0,0,0), (16,80),(SCREEN_WIDTH-16,80),3)
+#          w=selectTurtleSurface.get_width()
+#          windowSurface.blit(selectTurtleSurface, ((SCREEN_WIDTH-w)/2,32))
+          renderMsg(textMessage, -1, 16, scaleFactor=2)
+          pygame.draw.line(windowSurface,(0,0,0), (16,58),(SCREEN_WIDTH-16,58),3)
+
+
           
           # Draw turtles
           for t in listOfTurtles:
                windowSurface.blit(t.surfaces[t.frame],(t.xpos,t.ypos))
                # mark previously selected turtle with a square (during breeding menu)
                if t==previouslySelectedTurtle:
-                    cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6,17*3+6)                    
+                    cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6-3,17*3+6)                    
                     pygame.draw.rect(windowSurface, (225,20,20), cursorRect, 3 )
           pygame.draw.rect(windowSurface, (0,0,0), pygame.Rect(
                (SCREEN_WIDTH-(96*5+16*4))/2-16, listOfTurtles[0].ypos-16,
@@ -219,24 +259,36 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
           # Draw selection square
           selectCounter = (selectCounter+1)%50
           sc=150+2*selectCounter
-          selectColor = (sc,sc,sc/2)
+          if discardCursor:
+               selectColor = (240,10,10)
+          else:
+               selectColor = (sc,sc,sc/2)
           t=listOfTurtles[selectedTurtle]
-          cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6,17*3+6)
+          cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6-3,17*3+6)
           pygame.draw.rect(windowSurface, selectColor, cursorRect, 3)
           
+          if discardCursor:
+               pygame.draw.line(windowSurface, selectColor, cursorRect.topright, cursorRect.bottomleft,3)
+               pygame.draw.line(windowSurface, selectColor, cursorRect.topleft, cursorRect.bottomright,3)
+               
+               
+          
           # Draw selected turtle above
-          windowSurface.blit(t.surfaces[t.frame],(240,112))
+          windowSurface.blit(t.surfaces[t.frame],(140,88))
           
           # Display turtle statistics
           t=listOfTurtles[selectedTurtle]
-          statsy=88
-          spdTextSurface=scale3x(statsFontObj.render("SPEED: "+str(t.speed),True,TEXT_COLOR))
-          agiTextSurface=scale3x(statsFontObj.render("AGILITY: "+str(t.agility),True,TEXT_COLOR))
-          endTextSurface=scale3x(statsFontObj.render("ENDURANCE: "+str(t.endurance),True,TEXT_COLOR))
+          statsy=72
+          #spdTextSurface=statsFontObj.render("SPEED: "+str(t.speed),True,TEXT_COLOR)
+          #agiTextSurface=statsFontObj.render("AGILITY: "+str(t.agility),True,TEXT_COLOR)
+          #endTextSurface=statsFontObj.render("ENDURANCE: "+str(t.endurance),True,TEXT_COLOR)
+          #windowSurface.blit(spdTextSurface, (380,statsy))
+          #windowSurface.blit(agiTextSurface, (380,statsy+32))
+          #windowSurface.blit(endTextSurface, (380,statsy+64))
+          renderMsg("SPEED:     "+str(t.speed), 280,statsy, scaleFactor=1)
+          renderMsg("AGILITY:   "+str(t.agility), 280,statsy+32, scaleFactor=1)
+          renderMsg("ENDURANCE: "+str(t.endurance), 280,statsy+64, scaleFactor=1)
           
-          windowSurface.blit(spdTextSurface, (380,statsy))
-          windowSurface.blit(agiTextSurface, (380,statsy+32))
-          windowSurface.blit(endTextSurface, (380,statsy+64))
           
           for t in listOfTurtles:
                t.tick()
@@ -277,7 +329,7 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
 
 
 def doRace(turtle):
-     global leafCounter, raceNumber, losses, gameOver
+     global leafCounter, raceNumber, losses, gameOver, victories
      
      raceNumber += 1
      
@@ -339,18 +391,19 @@ def doRace(turtle):
                     if countdown>0:
                          countdownSound.play()
 
-               readySurf=scale3x(titleFontObj.render("GET READY!",True,TEXT_COLOR))
-               readyRect=readySurf.get_rect()
-               readyY=-96+(SCREEN_HEIGHT-readyRect.h)/2
-               windowSurface.blit(readySurf,((SCREEN_WIDTH-readyRect.w)/2,readyY))
+               #readySurf=titleFontObj.render("GET READY!",True,TEXT_COLOR)
+               #readyY=-96*2+(SCREEN_HEIGHT-readySurf.get_height())/2
+               #windowSurface.blit(readySurf,((SCREEN_WIDTH-readySurf.get_width())/2,readyY))
+               readyY=-96*2+(SCREEN_HEIGHT-48)/2
+               renderMsg("GET READY!",-1,readyY)
                
                if countdown>0:
                     st=str(countdown)
                else:
                     st="GO!"
-               countSurface=scale3x(titleFontObj.render(st,True,TEXT_COLOR))
-               countRect=countSurface.get_rect()
-               windowSurface.blit(countSurface,((SCREEN_WIDTH-countRect.w)/2,readyY+96))
+               #countSurface=titleFontObj.render(st,True,TEXT_COLOR)
+               #windowSurface.blit(countSurface,((SCREEN_WIDTH-countSurface.get_width())/2,readyY+64))
+               renderMsg(st,-1,readyY+64)
 
           if countdown<=0 and not started:
                started=True
@@ -379,20 +432,25 @@ def doRace(turtle):
           FOOTER_Y=SCREEN_HEIGHT-64
           pygame.draw.line(windowSurface, (0,0,0), (16,FOOTER_Y),(SCREEN_WIDTH-16,FOOTER_Y),3)
           # race number
-          raceCounterSurf=scale3x(statsFontObj.render("LOST/RACES: "+str(losses)+"/"+str(raceNumber),True,TEXT_COLOR))
-          windowSurface.blit(raceCounterSurf, (16,FOOTER_Y+9))
+          #raceCounterSurf=statsFontObj.render("LOST/RACES: "+str(losses)+"/"+str(raceNumber),True,TEXT_COLOR)
+          #windowSurface.blit(raceCounterSurf, (16,FOOTER_Y+9))
+          renderMsg(" WON: "+str(victories),16,FOOTER_Y+9,scaleFactor=1)
+          renderMsg("LOST: "+str(losses),16,FOOTER_Y+9+16,scaleFactor=1)
           # leaf counter
-          leafCounterSurface=scale3x(statsFontObj.render(str(leafCounter),True,TEXT_COLOR))
-          windowSurface.blit(leafCounterSurface, (300,FOOTER_Y+9) )
+          #leafCounterSurface=statsFontObj.render("LEAVES: "+str(leafCounter),True,TEXT_COLOR)
+          #windowSurface.blit(leafCounterSurface, (364,FOOTER_Y+9) )
+          renderMsg("LEAF BOOSTS: "+str(leafCounter), -1, FOOTER_Y+9, scaleFactor=1)
+          
           # time clock
           if timeClock==None:
                tim=0
           else:
                if not finished:
-                    tim=int(round((pygame.time.get_ticks()-timeClock)/100.0))
-          clockSurface=scale3x(statsFontObj.render("TIME: "+str(tim),True,TEXT_COLOR))
-          windowSurface.blit(clockSurface, (500,FOOTER_Y+9))
-
+                    tim=round((pygame.time.get_ticks()-timeClock)/100.0,1)
+          #clockSurface=statsFontObj.render("TIME: "+str(tim),True,TEXT_COLOR)
+          #windowSurface.blit(clockSurface, (500,FOOTER_Y+9))
+          renderMsg("TIME: "+str(tim), 500,FOOTER_Y+9, scaleFactor=1)
+          
                     
           # Check if somebody won
           if not finished:
@@ -401,7 +459,7 @@ def doRace(turtle):
                for t in racingTurtles:
                     if t.xpos>SCREEN_WIDTH-96:
                          finished=True
-                         finishCounter=FPS*3
+                         finishCounter=FPS*2
                          # stop racing
                          leafCounter+=1
                          for t in racingTurtles:
@@ -409,6 +467,7 @@ def doRace(turtle):
                          # Was it you?
                          if turtle.xpos>SCREEN_WIDTH-96:
                               won=True
+                              victories+=1
                               #if len(turtleList)<MAX_TURTLES_OWNED:
                               #     turtleList.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
                          else:
@@ -417,16 +476,21 @@ def doRace(turtle):
           else:
           # If finished, announce victory or loss
                if won:
-                    finMsgObj=scale3x(titleFontObj.render("YOU WIN!",True,TEXT_COLOR))
+                    #finMsgObj=titleFontObj.render("YOU WIN!",True,TEXT_COLOR)
+                    finMsg = "YOU WIN!"
                else:
                     if losses>=MAX_LOSSES:
-                         finMsgObj=scale3x(titleFontObj.render("GAME OVER",True,TEXT_COLOR))
+                         #finMsgObj=titleFontObj.render("GAME OVER",True,TEXT_COLOR)
+                         finMsg = "GAME OVER"
                          gameOver=True
                     else:
-                         finMsgObj=scale3x(titleFontObj.render("YOU LOSE",True,TEXT_COLOR))
+                         #finMsgObj=titleFontObj.render("YOU LOSE",True,TEXT_COLOR)
+                         finMsg = "YOU LOSE"
                
-               wi=finMsgObj.get_rect().w
-               windowSurface.blit(finMsgObj,((SCREEN_WIDTH-wi)/2,readyY))
+               #wi=finMsgObj.get_rect().w
+               #windowSurface.blit(finMsgObj,((SCREEN_WIDTH-wi)/2,readyY))
+               renderMsg(finMsg,-1,readyY)
+               
                finishCounter-=1
                if finishCounter<=0:
                     done=True
@@ -503,13 +567,13 @@ while True:
           pygame.mixer.music.play(-1)
           if result:
                while len(turtleList)>=MAX_TURTLES_OWNED:
-                    t=doSelect("DISCARD ONE TURTLE")
+                    t=doSelect("DISCARD ONE TURTLE", discardCursor=True)
                     turtleList.remove(t)
-               turtleList.append(doSelect("SELECT YOUR PRIZE!",None,result))
+               turtleList.append(doSelect("SELECT YOUR PRIZE",None,result))
                
           
           while len(turtleList)>=MAX_TURTLES_OWNED:
-               t=doSelect("DISCARD ONE TURTLE")
+               t=doSelect("DISCARD ONE TURTLE", discardCursor=True)
                turtleList.remove(t)
           
           turtle1=None
