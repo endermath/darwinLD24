@@ -1,5 +1,5 @@
 
-import pygame,sys,os,random
+import pygame,sys,os,random,math
 
 from pygame.locals import *
 from global_stuff import *
@@ -102,12 +102,12 @@ sandRandomizer=random.Random()    # used to randomize the sand/desert tiles
 
 # Reset the game
 def resetGame():
-     global gameOver, victory, raceNumber, turtleList, leafCounter
+     global gameOver, victory, raceNumber, turtleList, leafCounter, losses
      
      turtleList = []
-     for i in range(10):
-          v = int(5+i*Turtle.MAX_STAT/10.0)
-          turtleList.append(Turtle(10,v,10))
+#     for i in range(10):
+#          v = int(5+i*Turtle.MAX_STAT/10.0)
+#          turtleList.append(Turtle(10,v,10))
      
      turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
      turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
@@ -116,7 +116,7 @@ def resetGame():
      victory=False
      
      raceNumber=0
-     victories=0
+     losses=0
      leafCounter=1  #start with one leaf
 
 def drawSand():
@@ -170,30 +170,30 @@ def doTitle():
           fpsClock.tick(FPS)
 
 
-def doSelect():
+def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[]):
      global gameOver   #need to modify these global variables
      # Initialize Turtle Selection Screen
      selectedTurtle=0
      
-     # Play select/breed screen music
-     pygame.mixer.music.load("bu-tasty-and-lively.it")
-     #pygame.mixer.music.play(-1)
-
+     if listOfTurtles==[]:
+          listOfTurtles=turtleList
+     
      # Position the turtles in the list on screen
-     total=len(turtleList)
+     total=len(listOfTurtles)
      rtotal = min(5,total)
      for a in range(total):
           r = a/5
           c = a%5
-          turtleList[5*r+c].xpos=(SCREEN_WIDTH-(rtotal*96+(rtotal-1)*16))/2+(96+16)*c
-          turtleList[5*r+c].ypos=200+(17*3+16)*r
+          listOfTurtles[5*r+c].xpos=(SCREEN_WIDTH-(rtotal*96+(rtotal-1)*16))/2+(96+16)*c
+          listOfTurtles[5*r+c].ypos=200+(17*3+16)*r
 
      # Prepare text to be displayed
-     selectTurtleSurface=titleFontObj.render("SELECT YOUR TURTLE",True,TEXT_COLOR)
+     selectTurtleSurface=titleFontObj.render(textMessage,True,TEXT_COLOR)
      w=selectTurtleSurface.get_rect().width*3
      h=selectTurtleSurface.get_rect().height*3
      selectTurtleSurface=pygame.transform.scale(selectTurtleSurface,(w,h))
      
+     selectCounter=0  #for flashing cursor
      done=False
      while not done:
           
@@ -206,16 +206,21 @@ def doSelect():
           pygame.draw.line(windowSurface,(0,0,0), (16,80),(SCREEN_WIDTH-16,80),3)
           
           # Draw turtles
-          for t in turtleList:
+          for t in listOfTurtles:
                windowSurface.blit(t.surfaces[t.frame],(t.xpos,t.ypos))
+               # mark previously selected turtle with a square (during breeding menu)
+               if t==previouslySelectedTurtle:
+                    cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6,17*3+6)                    
+                    pygame.draw.rect(windowSurface, (225,20,20), cursorRect, 3 )
           pygame.draw.rect(windowSurface, (0,0,0), pygame.Rect(
-               (SCREEN_WIDTH-(96*5+16*4))/2-16, turtleList[0].ypos-16,
+               (SCREEN_WIDTH-(96*5+16*4))/2-16, listOfTurtles[0].ypos-16,
                (96*5+16*4)+16*2, 17*3*4+3*16+2*16), 3)
           
           # Draw selection square
-          sc=random.randint(150,250)
-          selectColor = (sc,sc,sc)
-          t=turtleList[selectedTurtle]
+          selectCounter = (selectCounter+1)%50
+          sc=150+2*selectCounter
+          selectColor = (sc,sc,sc/2)
+          t=listOfTurtles[selectedTurtle]
           cursorRect=pygame.Rect(t.xpos-3,t.ypos-3,96+6,17*3+6)
           pygame.draw.rect(windowSurface, selectColor, cursorRect, 3)
           
@@ -223,7 +228,7 @@ def doSelect():
           windowSurface.blit(t.surfaces[t.frame],(240,112))
           
           # Display turtle statistics
-          t=turtleList[selectedTurtle]
+          t=listOfTurtles[selectedTurtle]
           statsy=88
           spdTextSurface=scale3x(statsFontObj.render("SPEED: "+str(t.speed),True,TEXT_COLOR))
           agiTextSurface=scale3x(statsFontObj.render("AGILITY: "+str(t.agility),True,TEXT_COLOR))
@@ -233,7 +238,7 @@ def doSelect():
           windowSurface.blit(agiTextSurface, (380,statsy+32))
           windowSurface.blit(endTextSurface, (380,statsy+64))
           
-          for t in turtleList:
+          for t in listOfTurtles:
                t.tick()
                
           for event in pygame.event.get():
@@ -245,7 +250,7 @@ def doSelect():
                               selectedTurtle-=1
                               selectSound.play()
                     elif event.key==K_RIGHT:
-                         if selectedTurtle+1<len(turtleList):
+                         if selectedTurtle+1<len(listOfTurtles):
                               selectedTurtle+=1
                               selectSound.play()
                     elif event.key==K_UP:
@@ -253,27 +258,26 @@ def doSelect():
                               selectedTurtle-=5
                               selectSound.play()
                     elif event.key==K_DOWN:
-                         if selectedTurtle+5<len(turtleList):
+                         if selectedTurtle+5<len(listOfTurtles):
                               selectedTurtle+=5
                               selectSound.play()
                     elif event.key==K_RETURN:
                          selectSound.play()
                          done=True
-                    elif event.key==K_ESCAPE:
-                         done=True
-                         gameOver=True
+#                    elif event.key==K_ESCAPE:
+#                         done=True
+#                         gameOver=True
 
           pygame.display.update()
           fpsClock.tick(FPS)
 
-     return turtleList[selectedTurtle]
-          
-          #selectSurface=
-          #windowSurface.fill((80,80,170))
-     
+     return listOfTurtles[selectedTurtle]
+
+
+
 
 def doRace(turtle):
-     global leafCounter, raceNumber
+     global leafCounter, raceNumber, losses, gameOver
      
      raceNumber += 1
      
@@ -281,7 +285,7 @@ def doRace(turtle):
      
      # Randomize turtles to race against
      minS=1+2*(raceNumber-1)
-     maxS=1+10*raceNumber
+     maxS=1+4*raceNumber
      racingTurtles=[]
      for i in range(NUMBER_OF_RACERS):
           racingTurtles.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
@@ -375,7 +379,7 @@ def doRace(turtle):
           FOOTER_Y=SCREEN_HEIGHT-64
           pygame.draw.line(windowSurface, (0,0,0), (16,FOOTER_Y),(SCREEN_WIDTH-16,FOOTER_Y),3)
           # race number
-          raceCounterSurf=scale3x(statsFontObj.render("RACE NO.: "+str(raceNumber),True,TEXT_COLOR))
+          raceCounterSurf=scale3x(statsFontObj.render("WINS/RACES: "+str(raceNumber-losses)+"/"+str(raceNumber),True,TEXT_COLOR))
           windowSurface.blit(raceCounterSurf, (16,FOOTER_Y+9))
           # leaf counter
           leafCounterSurface=scale3x(statsFontObj.render(str(leafCounter),True,TEXT_COLOR))
@@ -399,19 +403,27 @@ def doRace(turtle):
                          finished=True
                          finishCounter=FPS*3
                          # stop racing
+                         leafCounter+=1
                          for t in racingTurtles:
                               t.stopRacing()
                          # Was it you?
                          if turtle.xpos>SCREEN_WIDTH-96:
                               won=True
+                              #if len(turtleList)<MAX_TURTLES_OWNED:
+                              #     turtleList.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
                          else:
                               won=False
+                              losses+=1
           else:
           # If finished, announce victory or loss
                if won:
                     finMsgObj=scale3x(titleFontObj.render("YOU WIN!",True,TEXT_COLOR))
                else:
-                    finMsgObj=scale3x(titleFontObj.render("YOU LOSE",True,TEXT_COLOR))
+                    if losses>=MAX_LOSSES:
+                         finMsgObj=scale3x(titleFontObj.render("GAME OVER",True,TEXT_COLOR))
+                         gameOver=True
+                    else:
+                         finMsgObj=scale3x(titleFontObj.render("YOU LOSE",True,TEXT_COLOR))
                
                wi=finMsgObj.get_rect().w
                windowSurface.blit(finMsgObj,((SCREEN_WIDTH-wi)/2,readyY))
@@ -429,21 +441,44 @@ def doRace(turtle):
                               turtle.giveLeaf()
                               leafBonusSound.play()
                               leafCounter-=1
-                    elif event.key==K_ESCAPE:
-                         gameOver=True
-                         done=True
+#                    elif event.key==K_ESCAPE:
+#                         gameOver=True
+#                         done=True
                 
           pygame.display.update()
           fpsClock.tick(FPS)
 
      
-     leafCounter+=1
+     if won:
+          racingTurtles.remove(turtle)
+          return racingTurtles               #return opponents so we can claim our prize
+     else:
+          return None
+          
+
+
+def mutate(a,b,d):
+     if random.randint(1,2)==1:
+          mean = (2*a+b)/3.0
+     else:
+          mean = (a+2*b)/3.0
+     sigma=d/2.0
+     c = int(round(random.gauss(mean,sigma)))
+     #only allow positive variations
+     if c<mean:
+          c=mean + (mean-c)
+     c=max(1,c)
+     c=min(Turtle.MAX_STAT,c)
+     return c
      
-     return won 
-
-
-def doBreeding():
-     pass
+def doBreeding(turtle1,turtle2):
+     d=math.sqrt((turtle1.speed - turtle2.speed)**2+(turtle1.agility-turtle2.agility)**2+
+       (turtle1.endurance-turtle2.endurance)**2)
+     sp=mutate(turtle1.speed,turtle2.speed,d)
+     ag=mutate(turtle1.agility,turtle2.agility,d)
+     en=mutate(turtle1.endurance,turtle2.endurance,d)
+     turtleList.append(Turtle(sp,ag,en))
+     return False
      
 
 def doQuit():
@@ -456,15 +491,33 @@ while True:
      doTitle()
      pygame.mixer.music.fadeout(1000)
      while not gameOver:
-          turtle=doSelect()     #returns the selected turtle
+          # Play select/breed screen music
+          pygame.mixer.music.load("bu-tasty-and-lively.it")
+          pygame.mixer.music.play(-1)
+          turtle=doSelect("SELECT RACE TURTLE")     #returns the selected turtle
           pygame.mixer.music.fadeout(1000)
-          if doRace(turtle):    #returns True if race was won
-               pass
-               #won
-          else:
-               pass
-               #lost
-          if doBreeding():  #bred new species?
+          result=doRace(turtle)    #returns True if race was won
+          if gameOver:
+               break
+          pygame.mixer.music.play(-1)
+          if result:
+               while len(turtleList)>=MAX_TURTLES_OWNED:
+                    t=doSelect("DISCARD ONE TURTLE")
+                    turtleList.remove(t)
+               turtleList.append(doSelect("SELECT YOUR PRIZE!",None,result))
+               
+          
+          while len(turtleList)>=MAX_TURTLES_OWNED:
+               t=doSelect("DISCARD ONE TURTLE")
+               turtleList.remove(t)
+          
+          turtle1=None
+          turtle2=None
+          while turtle1==turtle2:
+               turtle1=doSelect("BREED TWO TURTLES")
+               turtle2=doSelect("BREED TWO TURTLES",turtle1)
+          
+          if doBreeding(turtle1,turtle2):  #bred new species?
                victory=True
                unlockedNewSpecies=True               
                gameOver=True
