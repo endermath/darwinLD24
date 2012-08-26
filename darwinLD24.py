@@ -284,8 +284,8 @@ def doRace(turtle):
      NUMBER_OF_RACERS=3
      
      # Randomize turtles to race against
-     minS=1+2*(raceNumber-1)
-     maxS=1+4*raceNumber
+     minS=max(1, 1+2*(raceNumber-1))
+     maxS=min(Turtle.MAX_STAT, 1+4*raceNumber)
      racingTurtles=[]
      for i in range(NUMBER_OF_RACERS):
           racingTurtles.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
@@ -379,7 +379,7 @@ def doRace(turtle):
           FOOTER_Y=SCREEN_HEIGHT-64
           pygame.draw.line(windowSurface, (0,0,0), (16,FOOTER_Y),(SCREEN_WIDTH-16,FOOTER_Y),3)
           # race number
-          raceCounterSurf=scale3x(statsFontObj.render("WINS/RACES: "+str(raceNumber-losses)+"/"+str(raceNumber),True,TEXT_COLOR))
+          raceCounterSurf=scale3x(statsFontObj.render("LOST/RACES: "+str(losses)+"/"+str(raceNumber),True,TEXT_COLOR))
           windowSurface.blit(raceCounterSurf, (16,FOOTER_Y+9))
           # leaf counter
           leafCounterSurface=scale3x(statsFontObj.render(str(leafCounter),True,TEXT_COLOR))
@@ -462,11 +462,12 @@ def mutate(a,b,d):
           mean = (2*a+b)/3.0
      else:
           mean = (a+2*b)/3.0
-     sigma=d/2.0
-     c = int(round(random.gauss(mean,sigma)))
+     sigma=d/4.0
+     c = random.gauss(mean,sigma)
      #only allow positive variations
      if c<mean:
           c=mean + (mean-c)
+     c=int(round(c))
      c=max(1,c)
      c=min(Turtle.MAX_STAT,c)
      return c
