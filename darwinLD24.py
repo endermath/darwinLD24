@@ -49,12 +49,14 @@ ridingDarwinSurface=scale3x(spriteSheetSurface.subsurface(pygame.Rect(16,16,16,1
 
 boneSurface=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(4*16,0,16,16)),(48,48))
 stoneSurface=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(5*16,0,16,16)),(48,48))
+cactusSurface=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,16,16,16)),(48,48))
+
+objTypeSurfaces=[stoneSurface,boneSurface,cactusSurface]
 
 desertSurfaces = [1,2]
 desertSurfaces[0]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(6*16,0,16,16)),(48,48))
 desertSurfaces[1]=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(7*16,0,16,16)),(48,48))
 
-cactusSurface=pygame.transform.scale(spriteSheetSurface.subsurface(pygame.Rect(0,16,16,16)),(48,48))
 
 goalSurface=scale3x(spriteSheetSurface.subsurface(pygame.Rect(4*16,4*16,16,16*3)))
 
@@ -103,15 +105,18 @@ def resetGame():
      global gameOver, victory, raceNumber, turtleList, leafCounter
      
      turtleList = []
-     turtleList.append(Turtle(random.randint(1,25),random.randint(1,25),random.randint(1,25)))
-     turtleList.append(Turtle(random.randint(1,25),random.randint(1,25),random.randint(1,25)))
-     turtleList.append(Turtle(random.randint(1,25),random.randint(1,25),random.randint(1,25)))
-     turtleList.append(Turtle(random.randint(1,25),random.randint(1,25),random.randint(1,25)))
+     for i in range(10):
+          v = int(5+i*Turtle.MAX_STAT/10.0)
+          turtleList.append(Turtle(10,v,10))
+     
+     turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
+     turtleList.append(Turtle(random.randint(1,15),random.randint(1,15),random.randint(1,15)))
      
      gameOver=False
      victory=False
      
      raceNumber=0
+     victories=0
      leafCounter=1  #start with one leaf
 
 def drawSand():
@@ -162,7 +167,7 @@ def doTitle():
                          sys.exit()
                 
           pygame.display.update()
-          fpsClock.tick(80)
+          fpsClock.tick(FPS)
 
 
 def doSelect():
@@ -172,7 +177,7 @@ def doSelect():
      
      # Play select/breed screen music
      pygame.mixer.music.load("bu-tasty-and-lively.it")
-     pygame.mixer.music.play(-1)
+     #pygame.mixer.music.play(-1)
 
      # Position the turtles in the list on screen
      total=len(turtleList)
@@ -236,7 +241,7 @@ def doSelect():
                     sys.exit()
                elif event.type==KEYDOWN:
                     if event.key==K_LEFT:
-                         if selectedTurtle>0:
+                         if selectedTurtle-1>=0:
                               selectedTurtle-=1
                               selectSound.play()
                     elif event.key==K_RIGHT:
@@ -244,7 +249,7 @@ def doSelect():
                               selectedTurtle+=1
                               selectSound.play()
                     elif event.key==K_UP:
-                         if selectedTurtle-5>0:
+                         if selectedTurtle-5>=0:
                               selectedTurtle-=5
                               selectSound.play()
                     elif event.key==K_DOWN:
@@ -259,7 +264,7 @@ def doSelect():
                          gameOver=True
 
           pygame.display.update()
-          fpsClock.tick(80)
+          fpsClock.tick(FPS)
 
      return turtleList[selectedTurtle]
           
@@ -287,16 +292,28 @@ def doRace(turtle):
      LANE_Y = 3*48
      LANE_HEIGHT=48+32
      
+     
+     # Randomize obstructive objects on the race tracks
+     objSurfaces=[] 
+     objRects = []
+     for i in range(NUMBER_OF_RACERS):
+          x=random.randint(32+96, SCREEN_WIDTH-144)
+          objRects.append(pygame.Rect(x,LANE_Y+LANE_HEIGHT*i, 48,48))
+          objSurfaces.append(random.choice(objTypeSurfaces))
+
+     # setup racing turtles
      for i in range(NUMBER_OF_RACERS):
           t=racingTurtles[i]
           t.xpos = 16
           t.ypos = LANE_Y+LANE_HEIGHT*i
+          t.objRect = objRects[i]       #let the turtle know where the obstruction is
 
      countdown = 3
      countdownSound.play()
      countdown_counter=20
      timeClock = None
      started=False
+     finished=False
      won=False
      done=False
      while not done:
@@ -304,6 +321,11 @@ def doRace(turtle):
           # Draw sand background
           drawSand()
           
+          # Draw obstructive objects
+          for i in range(NUMBER_OF_RACERS):
+               r=objRects[i]
+               windowSurface.blit(objSurfaces[i], (r.x,r.y))
+               
           # First do a countdown
           if countdown>=0:
                countdown_counter-=1
@@ -362,29 +384,47 @@ def doRace(turtle):
           if timeClock==None:
                tim=0
           else:
-               tim=round(int((pygame.time.get_ticks()-timeClock)/500.0))
-          clockSurface=scale3x(statsFontObj.render(str(tim),True,TEXT_COLOR))
+               if not finished:
+                    tim=int(round((pygame.time.get_ticks()-timeClock)/100.0))
+          clockSurface=scale3x(statsFontObj.render("TIME: "+str(tim),True,TEXT_COLOR))
           windowSurface.blit(clockSurface, (500,FOOTER_Y+9))
 
-          for t in racingTurtles:
-               t.tick()
                     
           # Check if somebody won
-          for t in racingTurtles:
-               if t.xpos>SCREEN_WIDTH-96:
+          if not finished:
+               for t in racingTurtles:
+                    t.tick()
+               for t in racingTurtles:
+                    if t.xpos>SCREEN_WIDTH-96:
+                         finished=True
+                         finishCounter=FPS*3
+                         # stop racing
+                         for t in racingTurtles:
+                              t.stopRacing()
+                         # Was it you?
+                         if turtle.xpos>SCREEN_WIDTH-96:
+                              won=True
+                         else:
+                              won=False
+          else:
+          # If finished, announce victory or loss
+               if won:
+                    finMsgObj=scale3x(titleFontObj.render("YOU WIN!",True,TEXT_COLOR))
+               else:
+                    finMsgObj=scale3x(titleFontObj.render("YOU LOSE",True,TEXT_COLOR))
+               
+               wi=finMsgObj.get_rect().w
+               windowSurface.blit(finMsgObj,((SCREEN_WIDTH-wi)/2,readyY))
+               finishCounter-=1
+               if finishCounter<=0:
                     done=True
-                    # Was it you?
-                    if turtle.xpos>SCREEN_WIDTH-96:
-                         won=True
-                    else:
-                         won=False
           
           # Check for key presses
           for event in pygame.event.get():
                if event.type==QUIT:
                     sys.exit()
                elif event.type==KEYDOWN:
-                    if event.key==K_SPACE:
+                    if event.key==K_SPACE and not finished:
                          if leafCounter>0:
                               turtle.giveLeaf()
                               leafBonusSound.play()
@@ -394,11 +434,8 @@ def doRace(turtle):
                          done=True
                 
           pygame.display.update()
-          fpsClock.tick(80)
+          fpsClock.tick(FPS)
 
-     # Done racing
-     for t in racingTurtles:
-          t.stopRacing()
      
      leafCounter+=1
      
