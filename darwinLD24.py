@@ -572,7 +572,7 @@ def doBreeding(turtle1,turtle2):
      turtleList.append(t)
      t.flash()
      breedSound.play()
-     return True #sp==Turtle.MAX_STAT and ag==Turtle.MAX_STAT and en==Turtle.MAX_STAT
+     return sp==Turtle.MAX_STAT and ag==Turtle.MAX_STAT and en==Turtle.MAX_STAT
      
 def doGameCompleted():
      pygame.mixer.music.stop()
@@ -596,9 +596,9 @@ def doGameCompleted():
           windowSurface.blit(t.surfaces[t.frame], ((SCREEN_WIDTH-96)/2,58+step*6))
           t.flash()
 
-          renderMsg("SPEED:     "+str(t.speed), -1, 58+step*8, scaleFactor=1)
-          renderMsg("AGILITY:   "+str(t.agility), -1, 58+step*9, scaleFactor=1)
-          renderMsg("ENDURANCE: "+str(t.endurance), -1, 58+step*10, scaleFactor=1)
+          renderMsg("SPEED:     "+str(t.speed), -1, 58+step*9, scaleFactor=1)
+          renderMsg("AGILITY:   "+str(t.agility), -1, 58+step*10, scaleFactor=1)
+          renderMsg("ENDURANCE: "+str(t.endurance), -1, 58+step*11, scaleFactor=1)
                                        
           renderMsg("NUMBER OF RACES: "+str(raceNumber),-1,58+step*12,scaleFactor=1)
           renderMsg("TOTAL RACING TIME: "+str(totalRacingTime),-1,58+step*13,scaleFactor=1)
