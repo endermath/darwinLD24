@@ -55,6 +55,7 @@ class Turtle():
                 
         self.objRect = None # placeholder for object on race track (related to agility)
     
+        self.isFlashing = False  # True when newly born through breeding
     
     def tick(self):
         exhaustion = 1
@@ -65,16 +66,20 @@ class Turtle():
                 exhaustion=0.4
             
             # Are we passing an obstruction?
-            
             if self.objRect.colliderect(pygame.Rect(self.xpos,self.ypos, 32*3, 17*3)):
                 obstruction=0.5 + 0.5*self.agility/(1.0*self.MAX_STAT)
                 
             bonus=1
+            # Are we in boost mode?
             if self.leafCounter>0:
                 self.leafCounter-=1
                 bonus=1.5            
             self.xpos=int(round(self.xpos+self.xspeed*bonus*exhaustion*obstruction + 2*bonus))
-            
+        elif self.isFlashing:
+            if self.leafCounter>0:
+                self.leafCounter-=1
+            else:
+                self.isFlashing=False
         self.frameDelay = int(70-60*self.speed*exhaustion/(1.0*self.MAX_STAT))
         self.frameCounter=(self.frameCounter-1)%self.frameDelay
         self.frame = 2*(self.leafCounter%2) + 2*self.frameCounter/self.frameDelay
@@ -91,6 +96,9 @@ class Turtle():
     
     def giveLeaf(self):
         self.leafCounter=self.LEAF_TIME
-        
+    
+    def flash(self):
+        self.leafCounter=self.LEAF_TIME*2 + self.leafCounter%2
+        self.isFlashing=True
         
         

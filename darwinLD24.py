@@ -15,7 +15,7 @@ else:
 # Initialize pygame and window
 pygame.init()
 fpsClock=pygame.time.Clock()
-pygame.display.set_caption("Darwin's Turtle Race Challange")
+pygame.display.set_caption("Darwin's Turtle Race Challenge")
 pygame.display.set_icon(pygame.image.load(os.path.join(basedir,'icon.png')))
 windowSurface=pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT)) #,FULLSCREEN | DOUBLEBUF | HWSURFACE)
 pygame.mouse.set_visible(False)
@@ -112,6 +112,8 @@ breedSound = pygame.mixer.Sound("breedsound.wav")
 countdownSound = pygame.mixer.Sound("countdown1.wav")
 startSound = pygame.mixer.Sound("startsound.wav")
 leafBonusSound=pygame.mixer.Sound("leafbonus.wav")
+lostRaceSound=pygame.mixer.Sound("lostrace.wav")
+winGameSound=pygame.mixer.Sound("win.ogg")
 
 #
 unlockedNewSpecies=False
@@ -121,7 +123,7 @@ sandRandomizer=random.Random()    # used to randomize the sand/desert tiles
 
 # Reset the game
 def resetGame():
-     global gameOver, victory, raceNumber, turtleList, leafCounter, losses, victories, selectedTurtle
+     global gameOver, victory, raceNumber, turtleList, leafCounter, losses, victories, selectedTurtle,totalRacingTime
      
      turtleList = []
 #     for i in range(10):
@@ -137,6 +139,7 @@ def resetGame():
      victory=False
      
      raceNumber=0
+     totalRacingTime =0 
      losses=0
      victories=0
      leafCounter=1  #start with one leaf
@@ -160,7 +163,7 @@ def doTitle():
      #titleSurface=range(3)
      #titleSurface[0]=bigFontObj.render("DARWIN'S",True,TEXT_COLOR)
      #titleSurface[1]=bigFontObj.render("TURTLE RACE",True,TEXT_COLOR)
-     #titleSurface[2]=bigFontObj.render("CHALLANGE",True,TEXT_COLOR)
+     #titleSurface[2]=bigFontObj.render("CHALLENGE",True,TEXT_COLOR)
      
      t=Turtle(random.randint(1,Turtle.MAX_STAT),random.randint(1,Turtle.MAX_STAT),random.randint(1,Turtle.MAX_STAT))
      while not done:
@@ -175,7 +178,7 @@ def doTitle():
           #     windowSurface.blit(surf,((SCREEN_WIDTH-w)/2,32+i*24*3))
           renderMsg("DARWIN'S",-1,32,scaleFactor=3)
           renderMsg("TURTLE RACE",-1,32+24*3,scaleFactor=3)
-          renderMsg("CHALLANGE",-1,32+2*24*3,scaleFactor=3)
+          renderMsg("CHALLENGE",-1,32+2*24*3,scaleFactor=3)
           
           if mainMenuCounter>11:
                windowSurface.blit(darwinSurface[0],(40,186))
@@ -188,9 +191,11 @@ def doTitle():
           renderMsg("INSTRUCTIONS:", -1, 240, scaleFactor=1)
           renderMsg("HELP DARWIN PROVE HIS THEORY", -1, 240+step, scaleFactor=1)
           renderMsg("BY BREEDING THE PERFECT RACING TURTLE", -1, 240+step*2, scaleFactor=1)
-          renderMsg("ARROW KEYS AND RETURN TO SELECT", -1, 240+step*3, scaleFactor=1)
-          renderMsg("SPACE TO BOOST DURING RACE",-1, 240+step*4, scaleFactor=1)
-          renderMsg("ENTER TO BEGIN",-1, 240+step*5, scaleFactor=1)
+          
+          renderMsg("CONTROLS:",-1,240+step*4, scaleFactor=1)
+          renderMsg("ARROW KEYS AND RETURN TO SELECT", -1, 240+step*5, scaleFactor=1)
+          renderMsg("SPACE TO BOOST DURING RACE",-1, 240+step*6, scaleFactor=1)
+          renderMsg("RETURN TO BEGIN",-1, 240+step*7, scaleFactor=1)
           
 
           t.tick()
@@ -235,7 +240,7 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[], disca
      while not done:
           
           # Clear Screen
-          windowSurface.fill((200,200,240)) #(130,130,230))
+          windowSurface.fill(BG_COLOR) #(130,130,230))
           
           # Display message
 #          w=selectTurtleSurface.get_width()
@@ -329,7 +334,7 @@ def doSelect(textMessage, previouslySelectedTurtle=None, listOfTurtles=[], disca
 
 
 def doRace(turtle):
-     global leafCounter, raceNumber, losses, gameOver, victories
+     global leafCounter, raceNumber, losses, gameOver, victories, totalRacingTime
      
      raceNumber += 1
      
@@ -371,6 +376,7 @@ def doRace(turtle):
      started=False
      finished=False
      won=False
+     gotLeaves=False  #keeps track of whether we got a chance to get leaves
      done=False
      while not done:
           
@@ -449,7 +455,7 @@ def doRace(turtle):
                     tim=round((pygame.time.get_ticks()-timeClock)/100.0,1)
           #clockSurface=statsFontObj.render("TIME: "+str(tim),True,TEXT_COLOR)
           #windowSurface.blit(clockSurface, (500,FOOTER_Y+9))
-          renderMsg("TIME: "+str(tim), 500,FOOTER_Y+9, scaleFactor=1)
+          renderMsg("TIME: "+str(tim), 472,FOOTER_Y+9, scaleFactor=1)
           
                     
           # Check if somebody won
@@ -459,18 +465,21 @@ def doRace(turtle):
                for t in racingTurtles:
                     if t.xpos>SCREEN_WIDTH-96:
                          finished=True
+                         totalRacingTime += tim     #add duration of this race to totalRacingTime
                          finishCounter=FPS*2
                          # stop racing
-                         leafCounter+=1
                          for t in racingTurtles:
                               t.stopRacing()
                          # Was it you?
                          if turtle.xpos>SCREEN_WIDTH-96:
                               won=True
                               victories+=1
+                              pygame.mixer.music.load('wonrace.xm')
+                              pygame.mixer.music.play(1)
                               #if len(turtleList)<MAX_TURTLES_OWNED:
                               #     turtleList.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
                          else:
+                              lostRaceSound.play()
                               won=False
                               losses+=1
           else:
@@ -490,6 +499,23 @@ def doRace(turtle):
                #wi=finMsgObj.get_rect().w
                #windowSurface.blit(finMsgObj,((SCREEN_WIDTH-wi)/2,readyY))
                renderMsg(finMsg,-1,readyY)
+               
+               # found leaves?
+               if not gameOver:     # if we lost the race and are gameover we dont get leaves...
+                    if not gotLeaves:  #and also now if we already got them
+                         gotLeaves=True
+                         r=random.randint(1,5)
+                         
+                         if r==5:
+                              leafCounter+=2
+                              leafMsg="YOU FOUND TWO LEAVES!"
+                         elif r>1:
+                              leafCounter+=1
+                              leafMsg="YOU FOUND A LEAF."
+                         else:
+                              leafMsg="YOU FOUND NOTHING."
+                    renderMsg(leafMsg,-1,readyY+48,scaleFactor=1) #but display msg
+                    
                
                finishCounter-=1
                if finishCounter<=0:
@@ -526,7 +552,7 @@ def mutate(a,b,d):
           mean = (2*a+b)/3.0
      else:
           mean = (a+2*b)/3.0
-     sigma=d/4.0
+     sigma=d/3.0
      c = random.gauss(mean,sigma)
      #only allow positive variations
      if c<mean:
@@ -542,9 +568,54 @@ def doBreeding(turtle1,turtle2):
      sp=mutate(turtle1.speed,turtle2.speed,d)
      ag=mutate(turtle1.agility,turtle2.agility,d)
      en=mutate(turtle1.endurance,turtle2.endurance,d)
-     turtleList.append(Turtle(sp,ag,en))
-     return False
+     t=Turtle(sp,ag,en)
+     turtleList.append(t)
+     t.flash()
+     breedSound.play()
+     return True #sp==Turtle.MAX_STAT and ag==Turtle.MAX_STAT and en==Turtle.MAX_STAT
      
+def doGameCompleted():
+     pygame.mixer.music.stop()
+     winGameSound.play()
+     
+     done=False
+     t=Turtle(Turtle.MAX_STAT,Turtle.MAX_STAT,Turtle.MAX_STAT)
+     while not done:
+          windowSurface.fill(BG_COLOR)
+          
+          renderMsg("CONGRATULATIONS!!!", -1, 16, scaleFactor=2)
+          pygame.draw.line(windowSurface,(0,0,0), (16,58),(SCREEN_WIDTH-16,58),3)
+
+          step=24
+          renderMsg("YOU HAVE BRED THE PERFECT", -1, 58+step*1, scaleFactor=1)
+          renderMsg("RACING TURTLE!!", -1, 58+step*2, scaleFactor=1)
+          renderMsg("NOW DARWIN WILL GO DOWN IN HISTORY", -1, 58+step*3, scaleFactor=1)
+          renderMsg("AS THE BEST TURTLE RACER", -1, 58+step*4, scaleFactor=1)
+          renderMsg("IN ALL OF GALAPAGOS ISLANDS", -1, 58+step*5, scaleFactor=1)
+          
+          windowSurface.blit(t.surfaces[t.frame], ((SCREEN_WIDTH-96)/2,58+step*6))
+          t.flash()
+
+          renderMsg("SPEED:     "+str(t.speed), -1, 58+step*8, scaleFactor=1)
+          renderMsg("AGILITY:   "+str(t.agility), -1, 58+step*9, scaleFactor=1)
+          renderMsg("ENDURANCE: "+str(t.endurance), -1, 58+step*10, scaleFactor=1)
+                                       
+          renderMsg("NUMBER OF RACES: "+str(raceNumber),-1,58+step*12,scaleFactor=1)
+          renderMsg("TOTAL RACING TIME: "+str(totalRacingTime),-1,58+step*13,scaleFactor=1)
+          
+          renderMsg("PRESS RETURN TO RESTART GAME", -1, 58+step*15, scaleFactor=1)
+          
+          t.tick()
+          
+          for event in pygame.event.get():
+               if event.type==QUIT:
+                    sys.exit()
+               elif event.type==KEYDOWN:
+                    if event.key==K_RETURN:
+                         done = True
+          
+          pygame.display.update()
+          fpsClock.tick(FPS)
 
 def doQuit():
      # Do you wish to quit? Show message. Wait for Y/N
@@ -564,6 +635,7 @@ while True:
           result=doRace(turtle)    #returns True if race was won
           if gameOver:
                break
+          pygame.mixer.music.load("bu-tasty-and-lively.it")
           pygame.mixer.music.play(-1)
           if result:
                while len(turtleList)>=MAX_TURTLES_OWNED:
@@ -588,9 +660,7 @@ while True:
                gameOver=True
           
      if victory:
-          # show victory message
-          pass
-     
+          doGameCompleted()     
      
           
 
