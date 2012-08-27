@@ -107,13 +107,13 @@ Turtle.bodySurfaces = turtleBodySurfaces
 
 
 # Load sound effects
-selectSound = pygame.mixer.Sound("selectsound.wav")
-breedSound = pygame.mixer.Sound("breedsound.wav")
-countdownSound = pygame.mixer.Sound("countdown1.wav")
-startSound = pygame.mixer.Sound("startsound.wav")
-leafBonusSound=pygame.mixer.Sound("leafbonus.wav")
-lostRaceSound=pygame.mixer.Sound("lostrace.wav")
-winGameSound=pygame.mixer.Sound("win.ogg")
+selectSound = pygame.mixer.Sound(os.path.join(basedir,"selectsound.wav"))
+breedSound = pygame.mixer.Sound(os.path.join(basedir,"breedsound.wav"))
+countdownSound = pygame.mixer.Sound(os.path.join(basedir,"countdown1.wav"))
+startSound = pygame.mixer.Sound(os.path.join(basedir,"startsound.wav"))
+leafBonusSound=pygame.mixer.Sound(os.path.join(basedir,"leafbonus.wav"))
+lostRaceSound=pygame.mixer.Sound(os.path.join(basedir,"lostrace.wav"))
+winGameSound=pygame.mixer.Sound(os.path.join(basedir,"win.ogg"))
 
 #
 unlockedNewSpecies=False
@@ -156,7 +156,7 @@ def doTitle():
      mainMenuCounter=14   #animate Darwin
 
      # Play title music
-     pygame.mixer.music.load("bu-the-bananas-elves.it")
+     pygame.mixer.music.load(os.path.join(basedir,"bu-the-bananas-elves.it"))
      pygame.mixer.music.play(-1)
 
      # Prepare title text
@@ -197,7 +197,8 @@ def doTitle():
           renderMsg("SPACE TO BOOST DURING RACE",-1, 240+step*6, scaleFactor=1)
           renderMsg("RETURN TO BEGIN",-1, 240+step*7, scaleFactor=1)
           
-
+          renderMsg("BY ENDERMATH 2012",-1, 240+step*9, scaleFactor=1)
+          
           t.tick()
           
           # RETURN to start, ESC to quit
@@ -474,7 +475,7 @@ def doRace(turtle):
                          if turtle.xpos>SCREEN_WIDTH-96:
                               won=True
                               victories+=1
-                              pygame.mixer.music.load('wonrace.xm')
+                              pygame.mixer.music.load(os.path.join(basedir,'wonrace.xm'))
                               pygame.mixer.music.play(1)
                               #if len(turtleList)<MAX_TURTLES_OWNED:
                               #     turtleList.append(Turtle(random.randint(minS,maxS),random.randint(minS,maxS),random.randint(minS,maxS)))
@@ -628,14 +629,14 @@ while True:
      pygame.mixer.music.fadeout(1000)
      while not gameOver:
           # Play select/breed screen music
-          pygame.mixer.music.load("bu-tasty-and-lively.it")
+          pygame.mixer.music.load(os.path.join(basedir,"bu-tasty-and-lively.it"))
           pygame.mixer.music.play(-1)
           turtle=doSelect("SELECT RACE TURTLE")     #returns the selected turtle
           pygame.mixer.music.fadeout(1000)
           result=doRace(turtle)    #returns True if race was won
           if gameOver:
                break
-          pygame.mixer.music.load("bu-tasty-and-lively.it")
+          pygame.mixer.music.load(os.path.join(basedir,"bu-tasty-and-lively.it"))
           pygame.mixer.music.play(-1)
           if result:
                while len(turtleList)>=MAX_TURTLES_OWNED:
